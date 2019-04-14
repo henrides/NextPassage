@@ -1,8 +1,8 @@
 import { Stop } from './stop';
 import { Injectable } from '@angular/core';
-import { Observable, of, Subject, timer, ReplaySubject, merge } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { switchMap, publish, publishReplay, refCount, map } from 'rxjs/operators';
+import { Observable, Subject, timer, merge } from 'rxjs';
+import { switchMap, publishReplay, refCount, debounceTime } from 'rxjs/operators';
 
 interface PassageStopResponse {
   route: string;
@@ -21,26 +21,40 @@ export class NextPassageService {
   private observedStops: Array<Stop> = [];
   private trigger = new Subject<void>();
   private url = 'https://us-central1-nextpassage-df18d.cloudfunctions.net/api';
+  private allPassages: Observable<Array<PassageStopResponse>> = null;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    this.allPassages = merge(
+      timer(60000, 60000),
+      this.trigger
+    ).pipe(
+      debounceTime(200),
+      switchMap(() => this.getAllPassages()),
+      publishReplay(1),
+      refCount()
+    );
+  }
 
   public getNextPassages(stop: Stop): Observable<number | null> {
     return Observable.create((observer) => {
       this.observedStops.push(stop);
-      const subscription = this.allPassages().subscribe((allPassages) => {
+      const subscription = this.allPassages.subscribe((allPassages) => {
         console.log('received new values');
         let passages = [];
         allPassages.some((passage) => {
           if (passage.route === stop.routeId && passage.stop === stop.stopId) {
-            passages = passage.passages;
+            if (passage.passages) {
+              passages = passage.passages;
+            }
             return true;
           }
           return false;
         });
-        if (passages.length === 0) {
+        const next = passages.filter((x) => x > Date.now() / 1000).sort();
+        if (next.length === 0) {
           observer.next(null);
         }
-        observer.next(passages.sort()[0]);
+        observer.next(next[0]);
       });
       this.trigger.next();
       return () => {
@@ -58,16 +72,5 @@ export class NextPassageService {
       })
     };
     return this.http.post<PassageStopResponse[]>(this.url + '/nextPassages', allStops);
-  }
-
-  private allPassages(): Observable<Array<PassageStopResponse>> {
-    return merge(
-      timer(60000, 60000),
-      this.trigger
-    ).pipe(
-      switchMap(() => this.getAllPassages()),
-      publishReplay(1),
-      refCount()
-    );
   }
 }
