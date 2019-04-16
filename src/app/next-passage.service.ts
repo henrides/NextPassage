@@ -2,16 +2,12 @@ import { Stop } from './stop';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, timer, merge } from 'rxjs';
-import { switchMap, publishReplay, refCount, debounceTime } from 'rxjs/operators';
+import { switchMap, publishReplay, refCount, debounceTime, tap } from 'rxjs/operators';
 
 interface PassageStopResponse {
   route: string;
   stop: string;
   passages: Array<string>;
-}
-
-interface PassageStopRequest {
-  trips: Array<Stop>;
 }
 
 @Injectable({
@@ -24,15 +20,33 @@ export class NextPassageService {
   private allPassages: Observable<Array<PassageStopResponse>> = null;
 
   constructor(private http: HttpClient) {
-    this.allPassages = merge(
-      timer(60000, 60000),
-      this.trigger
-    ).pipe(
+    this.allPassages = this.trigger.pipe(
       debounceTime(200),
       switchMap(() => this.getAllPassages()),
+      tap((x) => this.newTrips(x)),
       publishReplay(1),
       refCount()
     );
+  }
+
+  private newTrips(allTrips: Array<PassageStopResponse>): void {
+    let allPassages = [];
+    allTrips.forEach((trip: PassageStopResponse) => {
+      if (trip.passages) {
+        allPassages = allPassages.concat(trip.passages);
+      }
+    });
+    const now = Date.now();
+    const minPassage = allPassages.filter((x) => x > now).sort()[0] - now;
+    let nextTrigger: number;
+    if (!minPassage) {
+      nextTrigger = 600;
+    } else if (minPassage > 600) {
+      nextTrigger = Math.max(Math.min(minPassage - 600, 600), 60);
+    } else {
+      nextTrigger = 60;
+    }
+    setTimeout(() => { this.trigger.next(); }, nextTrigger * 1000);
   }
 
   public getNextPassages(stop: Stop): Observable<number | null> {
