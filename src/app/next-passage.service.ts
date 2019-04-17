@@ -36,7 +36,7 @@ export class NextPassageService {
         allPassages = allPassages.concat(trip.passages);
       }
     });
-    const now = Date.now();
+    const now = Math.floor(Date.now() / 1000);
     const minPassage = allPassages.filter((x) => x > now).sort()[0] - now;
     let nextTrigger: number;
     if (!minPassage) {
@@ -67,8 +67,9 @@ export class NextPassageService {
         const next = passages.filter((x) => x > Date.now() / 1000).sort();
         if (next.length === 0) {
           observer.next(null);
+        } else {
+          observer.next(next[0]);
         }
-        observer.next(next[0]);
       });
       this.trigger.next();
       return () => {
