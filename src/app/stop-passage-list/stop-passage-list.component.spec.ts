@@ -1,6 +1,12 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, Input } from '@angular/core';
 
 import { StopPassageListComponent } from './stop-passage-list.component';
+
+@Component({selector: 'app-stop-passage', template: ''})
+class StopPassageStubComponent {
+  @Input() stop;
+}
 
 describe('StopPassageListComponent', () => {
   let component: StopPassageListComponent;
@@ -8,7 +14,10 @@ describe('StopPassageListComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ StopPassageListComponent ]
+      declarations: [
+        StopPassageListComponent,
+        StopPassageStubComponent
+      ]
     })
     .compileComponents();
   }));
