@@ -18,6 +18,7 @@ export class NextDepartureService {
   private trigger = new Subject<void>();
   private url = 'https://us-central1-nextpassage-df18d.cloudfunctions.net/api';
   private allDepartures: Observable<Array<StopDepartureResponse>> = null;
+  private nextTriggerTimer: any;
 
   constructor(private http: HttpClient) {
     this.allDepartures = this.trigger.pipe(
@@ -46,7 +47,7 @@ export class NextDepartureService {
     } else {
       nextTrigger = 60;
     }
-    setTimeout(() => { this.trigger.next(); }, nextTrigger * 1000);
+    this.nextTriggerTimer = setTimeout(() => { this.trigger.next(); }, nextTrigger * 1000);
   }
 
   public getNextDepartures(stop: Stop): Observable<number | null> {
@@ -75,6 +76,9 @@ export class NextDepartureService {
       return () => {
         const idx = this.observedStops.findIndex((value) => value.routeId === stop.routeId && value.stopId === stop.stopId);
         this.observedStops.splice(idx, 1);
+        if (this.observedStops.length === 0) {
+          clearTimeout(this.nextTriggerTimer);
+        }
         subscription.unsubscribe();
       };
     });
