@@ -2,13 +2,13 @@ import { FromNowPipe } from './../from-now.pipe';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { StopPassageComponent } from './stop-passage.component';
-import { NextPassageService } from '../next-passage.service';
+import { NextDepartureService } from '../next-departure.service';
 import { of } from 'rxjs';
 
-let nextPassageServiceStub: Partial<NextPassageService>;
+let nextPassageServiceStub: Partial<NextDepartureService>;
 
 nextPassageServiceStub = {
-  getNextPassages: () => {
+  getNextDepartures: () => {
     return of(null);
   }
 };
@@ -24,7 +24,7 @@ describe('StopPassageComponent', () => {
         FromNowPipe
       ],
       providers: [
-        { provide: NextPassageService, useValue: nextPassageServiceStub }
+        { provide: NextDepartureService, useValue: nextPassageServiceStub }
       ]
     })
     .compileComponents();

@@ -1,10 +1,10 @@
 import { Stop } from './stop';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, timer, merge } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { switchMap, publishReplay, refCount, debounceTime, tap } from 'rxjs/operators';
 
-interface PassageStopResponse {
+interface StopDepartureResponse {
   route: string;
   stop: string;
   passages: Array<string>;
@@ -13,58 +13,58 @@ interface PassageStopResponse {
 @Injectable({
   providedIn: 'root'
 })
-export class NextPassageService {
+export class NextDepartureService {
   private observedStops: Array<Stop> = [];
   private trigger = new Subject<void>();
   private url = 'https://us-central1-nextpassage-df18d.cloudfunctions.net/api';
-  private allPassages: Observable<Array<PassageStopResponse>> = null;
+  private allDepartures: Observable<Array<StopDepartureResponse>> = null;
 
   constructor(private http: HttpClient) {
-    this.allPassages = this.trigger.pipe(
+    this.allDepartures = this.trigger.pipe(
       debounceTime(200),
-      switchMap(() => this.getAllPassages()),
-      tap((x) => this.newTrips(x)),
+      switchMap(() => this.getAllDepartures()),
+      tap((x) => this.newStopDepartures(x)),
       publishReplay(1),
       refCount()
     );
   }
 
-  private newTrips(allTrips: Array<PassageStopResponse>): void {
-    let allPassages = [];
-    allTrips.forEach((trip: PassageStopResponse) => {
-      if (trip.passages) {
-        allPassages = allPassages.concat(trip.passages);
+  private newStopDepartures(allStopDepartures: Array<StopDepartureResponse>): void {
+    let allDepartureTimes = [];
+    allStopDepartures.forEach((stopDeparture: StopDepartureResponse) => {
+      if (stopDeparture.passages) {
+        allDepartureTimes = allDepartureTimes.concat(stopDeparture.passages);
       }
     });
     const now = Math.floor(Date.now() / 1000);
-    const minPassage = allPassages.filter((x) => x > now).sort()[0] - now;
+    const minDeparture = allDepartureTimes.filter((x) => x > now).sort()[0] - now;
     let nextTrigger: number;
-    if (!minPassage) {
+    if (!minDeparture) {
       nextTrigger = 600;
-    } else if (minPassage > 600) {
-      nextTrigger = Math.max(Math.min(minPassage - 600, 600), 60);
+    } else if (minDeparture > 600) {
+      nextTrigger = Math.max(Math.min(minDeparture - 600, 600), 60);
     } else {
       nextTrigger = 60;
     }
     setTimeout(() => { this.trigger.next(); }, nextTrigger * 1000);
   }
 
-  public getNextPassages(stop: Stop): Observable<number | null> {
+  public getNextDepartures(stop: Stop): Observable<number | null> {
     return Observable.create((observer) => {
       this.observedStops.push(stop);
-      const subscription = this.allPassages.subscribe((allPassages) => {
+      const subscription = this.allDepartures.subscribe((allDepartures) => {
         console.log('received new values');
-        let passages = [];
-        allPassages.some((passage) => {
-          if (passage.route === stop.routeId && passage.stop === stop.stopId) {
-            if (passage.passages) {
-              passages = passage.passages;
+        let departures = [];
+        allDepartures.some((departure) => {
+          if (departure.route === stop.routeId && departure.stop === stop.stopId) {
+            if (departure.passages) {
+              departures = departure.passages;
             }
             return true;
           }
           return false;
         });
-        const next = passages.filter((x) => x > Date.now() / 1000).sort();
+        const next = departures.filter((x) => x > Date.now() / 1000).sort();
         if (next.length === 0) {
           observer.next(null);
         } else {
@@ -80,12 +80,12 @@ export class NextPassageService {
     });
   }
 
-  private getAllPassages(): Observable<Array<PassageStopResponse>> {
+  private getAllDepartures(): Observable<Array<StopDepartureResponse>> {
     const allStops = {
       trips: this.observedStops.map((stop) => {
         return { route: stop.routeId, stop: stop.stopId };
       })
     };
-    return this.http.post<PassageStopResponse[]>(this.url + '/nextPassages', allStops);
+    return this.http.post<StopDepartureResponse[]>(this.url + '/nextPassages', allStops);
   }
 }

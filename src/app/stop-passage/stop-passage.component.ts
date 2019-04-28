@@ -1,6 +1,6 @@
 import { Stop } from './../stop';
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
-import { NextPassageService } from '../next-passage.service';
+import { NextDepartureService } from '../next-departure.service';
 import { Subject, timer, merge } from 'rxjs';
 import { takeUntil, map } from 'rxjs/operators';
 
@@ -14,11 +14,11 @@ export class StopPassageComponent implements OnInit, OnDestroy {
   public nextPassage: number | null;
   private destroy: Subject<boolean> = new Subject<boolean>();
 
-  constructor(private nextPassageService: NextPassageService) { }
+  constructor(private nextPassageService: NextDepartureService) { }
 
   ngOnInit() {
     merge(
-      this.nextPassageService.getNextPassages(this.stop),
+      this.nextPassageService.getNextDepartures(this.stop),
       timer(20000, 20000).pipe(
         map(() => this.nextPassage)
       )

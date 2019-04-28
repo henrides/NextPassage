@@ -13,7 +13,7 @@ export class StopPassageListComponent implements OnInit {
 
   ngOnInit() {
     // Load stops from config file service
-    this.stops.push({ routeId: '72', stopId: '60276' });
+    this.stops.push({ routeId: '72', stopId: '60273' });
   }
 
 }
