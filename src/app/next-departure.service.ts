@@ -2,7 +2,7 @@ import { Stop } from './stop';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
-import { switchMap, publishReplay, refCount, debounceTime, tap } from 'rxjs/operators';
+import { switchMap, publish, refCount, debounceTime, tap } from 'rxjs/operators';
 
 interface StopDepartureResponse {
   route: string;
@@ -25,7 +25,7 @@ export class NextDepartureService {
       debounceTime(200),
       switchMap(() => this.getAllDepartures()),
       tap((x) => this.newStopDepartures(x)),
-      publishReplay(1),
+      publish(),
       refCount()
     );
   }
@@ -46,6 +46,10 @@ export class NextDepartureService {
       nextTrigger = Math.max(Math.min(minDeparture - 600, 600), 60);
     } else {
       nextTrigger = 60;
+    }
+    if (this.nextTriggerTimer) {
+      clearTimeout(this.nextTriggerTimer);
+      this.nextTriggerTimer = null;
     }
     this.nextTriggerTimer = setTimeout(() => { this.trigger.next(); }, nextTrigger * 1000);
   }
@@ -78,6 +82,7 @@ export class NextDepartureService {
         this.observedStops.splice(idx, 1);
         if (this.observedStops.length === 0) {
           clearTimeout(this.nextTriggerTimer);
+          this.nextTriggerTimer = null;
         }
         subscription.unsubscribe();
       };
