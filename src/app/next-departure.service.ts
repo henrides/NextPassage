@@ -54,7 +54,7 @@ export class NextDepartureService {
     this.nextTriggerTimer = setTimeout(() => { this.trigger.next(); }, nextTrigger * 1000);
   }
 
-  public getNextDepartures(stop: Stop): Observable<number | null> {
+  public getNextDepartures(stop: Stop): Observable<Array<number> | null> {
     return Observable.create((observer) => {
       this.observedStops.push(stop);
       const subscription = this.allDepartures.subscribe((allDepartures) => {
@@ -69,12 +69,7 @@ export class NextDepartureService {
           }
           return false;
         });
-        const next = departures.filter((x) => x > Date.now() / 1000).sort();
-        if (next.length === 0) {
-          observer.next(null);
-        } else {
-          observer.next(next[0]);
-        }
+        observer.next(departures);
       });
       this.trigger.next();
       return () => {

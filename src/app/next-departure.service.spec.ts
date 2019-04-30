@@ -28,8 +28,8 @@ describe('NextDepartureService', () => {
         const nextDepartureTime = (Date.now() / 1000) + 1234;
         service.getNextDepartures({ routeId: '1', stopId: '1234' }).pipe(
           take(1)
-        ).subscribe((departure) => {
-          expect(departure).toBe(nextDepartureTime);
+        ).subscribe((departures) => {
+          expect(departures[0]).toBe(nextDepartureTime);
         });
 
         tick(300); // debounce
@@ -54,14 +54,14 @@ describe('NextDepartureService', () => {
         const nextDepartureTime = (Date.now() / 1000) + 1234;
         service.getNextDepartures({ routeId: '1', stopId: '1234' }).pipe(
           take(1)
-        ).subscribe((departure) => {
-          expect(departure).toBe(nextDepartureTime);
+        ).subscribe((departures) => {
+          expect(departures[0]).toBe(nextDepartureTime);
         });
 
         service.getNextDepartures({ routeId: '2', stopId: '1234' }).pipe(
           take(1)
-        ).subscribe((departure) => {
-          expect(departure).toBe(nextDepartureTime + 1);
+        ).subscribe((departures) => {
+          expect(departures[0]).toBe(nextDepartureTime + 1);
         });
 
         tick(300); // debounce
@@ -91,8 +91,8 @@ describe('NextDepartureService', () => {
         const nextDepartureTime = Math.round((Date.now() / 1000)) + 1234;
         service.getNextDepartures({ routeId: '1', stopId: '1234' }).pipe(
           take(2)
-        ).subscribe((departure) => {
-          expect(departure).toBe(nextDepartureTime);
+        ).subscribe((departures) => {
+          expect(departures[0]).toBe(nextDepartureTime);
         });
 
         tick(1000);
@@ -111,8 +111,8 @@ describe('NextDepartureService', () => {
 
         service.getNextDepartures({ routeId: '2', stopId: '1234' }).pipe(
           take(1)
-        ).subscribe((departure) => {
-          expect(departure).toBe(nextDepartureTime + 1);
+        ).subscribe((departures) => {
+          expect(departures[0]).toBe(nextDepartureTime + 1);
         });
 
         tick(1000);
@@ -143,8 +143,8 @@ describe('NextDepartureService', () => {
         const nextDepartureTime = Math.round((Date.now() / 1000)) + 300;
         service.getNextDepartures({ routeId: '1', stopId: '1234' }).pipe(
           take(3)
-        ).subscribe((departure) => {
-          expect(departure).toBe(nextDepartureTime);
+        ).subscribe((departures) => {
+          expect(departures[0]).toBe(nextDepartureTime);
         });
 
         tick(300);

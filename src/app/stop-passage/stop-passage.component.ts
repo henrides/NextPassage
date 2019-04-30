@@ -11,28 +11,38 @@ import { takeUntil, map } from 'rxjs/operators';
 })
 export class StopPassageComponent implements OnInit, OnDestroy {
   @Input() stop: Stop;
-  public nextPassage: number | null;
+  public nextDepartures: Array<number> | null;
   private destroy: Subject<boolean> = new Subject<boolean>();
 
-  constructor(private nextPassageService: NextDepartureService) { }
+  constructor(private nextDepartureService: NextDepartureService) { }
 
   ngOnInit() {
     merge(
-      this.nextPassageService.getNextDepartures(this.stop),
+      this.nextDepartureService.getNextDepartures(this.stop),
       timer(20000, 20000).pipe(
-        map(() => this.nextPassage)
+        map(() => this.nextDepartures)
       )
     ).pipe(
       takeUntil(this.destroy)
-    ).subscribe((value) => {
-      console.log('new value for stop ' + this.stop.routeId + '(' + this.stop.stopId + '):' + value);
-      this.nextPassage = value;
+    ).subscribe((departures: Array<number> | null) => {
+      if (departures) {
+        this.nextDepartures = departures.filter((x) => x > Date.now() / 1000).sort();
+      } else {
+        this.nextDepartures = null;
+      }
     });
   }
 
   ngOnDestroy() {
     this.destroy.next(true);
     this.destroy.unsubscribe();
+  }
+
+  public get nextDeparture(): number | null {
+    if (!this.nextDepartures || this.nextDepartures.length === 0) {
+      return null;
+    }
+    return this.nextDepartures[0];
   }
 
 }
